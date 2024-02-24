@@ -1,0 +1,10 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+# Note: These only apply at the root directory.
+# The subdirectories have their own .gitignores for this.
+/.idea/
+/*.code-workspace
+/.vscode/
