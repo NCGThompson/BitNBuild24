@@ -24,7 +24,16 @@ def my_quadrats():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    quadrats_data = [{'id': quadrat.id, 'location': quadrat.location} for quadrat in user.quadrats]
+    quadrats_data = []
+    for assignment in user.assignments:
+        quadrat = assignment.quadrat
+        quadrats_data.append({
+            'assignment_id': assignment.id,
+            'assigned_date': assignment.assignment_date,
+            'due_date': assignment.due_date,
+            'quadrat_id': quadrat.id,
+            'location': quadrat.location,
+        })
     return jsonify({'quadrats': quadrats_data})
 
 
