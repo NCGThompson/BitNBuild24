@@ -23,7 +23,7 @@ class Assignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     quadrat_id = db.Column(db.Integer, db.ForeignKey('quadrat.id'), nullable=False)
-    assignment_date = db.Column(db.DateTime, unique=True, nullable=True)
+    assignment_date = db.Column(db.DateTime, unique=True, nullable=True, default=datetime.utcnow)
     due_date = db.Column(db.DateTime, unique=False, nullable=True)
     user = db.relationship('User', back_populates='assignments')
     quadrat = db.relationship('Quadrat', back_populates='assignments')

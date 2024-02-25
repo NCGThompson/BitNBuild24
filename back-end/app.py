@@ -33,19 +33,19 @@ def my_quadrats():
             'assigned_date': assignment.assignment_date,
             'due_date': assignment.due_date,
             'quadrat_id': quadrat.id,
-            'location': quadrat.location,
+            'location': quadrat.description,
         })
     return jsonify({'quadrats': quadrats_data})
 
 # TODO: fix unsupported media type
 @app.route('/assign-quadrat', methods=['POST'])
 def assign_quadrat():
-    data = request.json
+    data = request.form
 
     username = data.get('username')
     if not username:
-        return jsonify({'error': 'User ID is required'}), 400
-    user = User.query.get(username)
+        return jsonify({'error': 'Username is required'}), 400
+    user = User.query.filter_by(username=username).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
@@ -64,10 +64,12 @@ def assign_quadrat():
         if earliest_due_quadrat and earliest_due_quadrat.assignments[-1].due_date > datetime.utcnow():
             # If the due date hasn't passed, do not assign
             return jsonify({'message': 'No quadrats available for assignment'}), 409
-        else:
+        elif earliest_due_quadrat:
             # Create a new assignment with the quadrat that has the earliest due date
             new_assignment = Assignment(user_id=user.id, quadrat_id=earliest_due_quadrat.id)
             db.session.add(new_assignment)
+        else:
+            return jsonify({'message': 'No quadrats available'}), 409
 
     db.session.commit()
     return jsonify({'message': 'Quadrat assigned successfully', 'quadrat_id': new_assignment.quadrat_id}), 201
@@ -77,7 +79,7 @@ def submit_assignment():
     # Render an HTML form for GET requests
     return '''
     <form action="/assign-quadrat" method="post">
-        User ID: <input type="text" name="username"><br>
+        Username: <input type="text" name="username"><br>
         <input type="submit" value="Assign Quadrat">
     </form>
     '''

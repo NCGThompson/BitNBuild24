@@ -39,6 +39,7 @@ def add_sample_quadrats():
         db.session.add_all(
             [Quadrat(description=location, weight=1) for location in coordinateList]
         )
+        db.session.commit()
 
 if __name__ == '__main__':
     should_reset = input("Reset the database? (y/n): ").lower() == 'y'
