@@ -1,6 +1,4 @@
-from curses.ascii import US
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from database import db, User
 
