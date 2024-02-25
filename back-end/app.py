@@ -1,6 +1,7 @@
+from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from database import db, User
+from database import db, User, Quadrat, Assignment
 
 app = Flask(__name__)
 CORS(app)
@@ -35,6 +36,55 @@ def my_quadrats():
             'location': quadrat.location,
         })
     return jsonify({'quadrats': quadrats_data})
+
+# TODO: fix unsupported media type
+@app.route('/assign-quadrat', methods=['POST'])
+def assign_quadrat():
+    data = request.json
+
+    username = data.get('username')
+    if not username:
+        return jsonify({'error': 'User ID is required'}), 400
+    user = User.query.get(username)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Try to find a quadrat without any assignments
+    unassigned_quadrat = Quadrat.query.filter(~Quadrat.assignments.any()).first()
+
+    if unassigned_quadrat:
+        # If there's an unassigned quadrat, create a new assignment for it
+        new_assignment = Assignment(user_id=user.id, quadrat_id=unassigned_quadrat.id)
+        db.session.add(new_assignment)
+    else:
+        # Find the quadrat with the earliest due date among all assignments
+        earliest_due_quadrat = Quadrat.query.join(Assignment).order_by(Assignment.due_date.asc()).first()
+
+        # Check if the earliest due date has not passed
+        if earliest_due_quadrat and earliest_due_quadrat.assignments[-1].due_date > datetime.utcnow():
+            # If the due date hasn't passed, do not assign
+            return jsonify({'message': 'No quadrats available for assignment'}), 409
+        else:
+            # Create a new assignment with the quadrat that has the earliest due date
+            new_assignment = Assignment(user_id=user.id, quadrat_id=earliest_due_quadrat.id)
+            db.session.add(new_assignment)
+
+    db.session.commit()
+    return jsonify({'message': 'Quadrat assigned successfully', 'quadrat_id': new_assignment.quadrat_id}), 201
+
+@app.route('/submit-assignment')
+def submit_assignment():
+    # Render an HTML form for GET requests
+    return '''
+    <form action="/assign-quadrat" method="post">
+        User ID: <input type="text" name="username"><br>
+        <input type="submit" value="Assign Quadrat">
+    </form>
+    '''
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 
 
 if __name__ == '__main__':
